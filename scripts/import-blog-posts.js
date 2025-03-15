@@ -246,6 +246,27 @@ async function readMarkdownFiles() {
   }
 }
 
+// Add this function to notify IndexNow about new blog posts
+async function notifyIndexNowAboutNewPost(slug) {
+  try {
+    const siteUrl = 'https://www.pawpedia.xyz';
+    const apiKey = 'f468ab61f6c644ada744fbdc836a2b60';
+    const fullUrl = `${siteUrl}/blog/${slug}`;
+    
+    console.log(`Notifying IndexNow about new blog post: ${fullUrl}`);
+    
+    const response = await axios.get(`https://www.bing.com/indexnow?url=${encodeURIComponent(fullUrl)}&key=${apiKey}`);
+    
+    if (response.status === 200) {
+      console.log(`✅ Successfully notified IndexNow about: ${slug}`);
+    } else {
+      console.log(`❌ Failed to notify IndexNow about: ${slug}. Status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`Error notifying IndexNow about ${slug}:`, error);
+  }
+}
+
 // Function to import posts into Supabase
 async function importPostsToSupabase(posts, publishedSlugs) {
   if (posts.length === 0) {
@@ -314,6 +335,9 @@ async function importPostsToSupabase(posts, publishedSlugs) {
         console.log(`✅ Post created: ${post.title}`);
         // Add to published list
         updatePublishedArticles(post.slug);
+        
+        // Notify IndexNow about the new blog post
+        await notifyIndexNowAboutNewPost(post.slug);
       }
     } catch (error) {
       console.error(`Error processing post ${post.slug}:`, error);
@@ -337,6 +361,12 @@ async function main() {
     
     // Import posts to Supabase
     await importPostsToSupabase(posts, publishedSlugs);
+    
+    // If we imported any new posts, also notify IndexNow about the sitemap update
+    if (newPosts.length > 0) {
+      console.log('Notifying IndexNow about updated sitemap...');
+      await notifyIndexNowAboutNewPost('sitemap.xml');
+    }
     
     console.log('Import completed successfully');
   } catch (error) {

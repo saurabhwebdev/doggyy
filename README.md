@@ -1,6 +1,6 @@
 # PawPedia - Dog Breed Directory
 
-PawPedia is a comprehensive dog breed directory powered by AI, providing detailed information about various dog breeds.
+PawPedia is a comprehensive dog breed directory powered by AI, providing detailed information about various dog breeds, along with a rich blog section featuring dog care articles.
 
 ## Features
 
@@ -8,13 +8,17 @@ PawPedia is a comprehensive dog breed directory powered by AI, providing detaile
 - Beautiful photo galleries for each breed
 - Responsive design for all devices
 - Performance optimization with 6-month caching of AI-generated content
+- Blog section with lazy loading for infinite scrolling
+- Dynamic sitemap generation for SEO
+- IndexNow integration for faster search engine indexing
+- Responsive design for all devices
 
 ## Setup
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Supabase account (for caching AI-generated content)
+- Supabase account (for caching AI-generated content and blog storage)
 
 ### Installation
 
@@ -35,17 +39,18 @@ PawPedia is a comprehensive dog breed directory powered by AI, providing detaile
      ```
      NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
      NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+     NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
      NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
      ```
 
-### Supabase Setup for Caching
+### Supabase Setup
 
 1. Create a new Supabase project
-2. Get your Supabase URL and anon key from the project settings
-3. Set up the database table for caching:
+2. Get your Supabase URL, anon key, and service role key from the project settings
+3. Set up the database tables:
    - Go to the SQL Editor in your Supabase dashboard
-   - Run the SQL script from `supabase/migrations/20240701000000_create_breed_cache_table.sql`
-   - This creates a `breed_cache` table with the necessary structure
+   - Run the SQL script from `supabase/migrations/20240701000000_create_breed_cache_table.sql` for breed caching
+   - Run the SQL script from `supabase/migrations/20240701000001_create_blog_tables.sql` for blog functionality
 
 ## How the Caching System Works
 
@@ -59,6 +64,81 @@ PawPedia uses a caching system to improve performance and reduce API calls to th
 
 This approach significantly improves performance and reduces costs associated with AI API calls.
 
+## Blog System
+
+PawPedia includes a comprehensive blog system with the following features:
+
+### Blog Post Structure
+
+Blog posts are stored in Supabase with the following structure:
+- Title
+- Slug (URL-friendly identifier)
+- Content (Markdown format)
+- Excerpt (Short summary)
+- Featured Image
+- Author
+- Category
+- Published Date
+
+### Blog Import System
+
+You can import blog posts from Markdown files using the import script:
+
+1. Add your Markdown files to the `src/app/blog/posts` directory with the following frontmatter format:
+   ```markdown
+   ---
+   title: "Your Blog Post Title"
+   slug: "url-friendly-slug"
+   excerpt: "A short summary of the blog post"
+   coverImage: "https://example.com/image.jpg" (optional, will be replaced with a dog image)
+   author: "Author Name"
+   category: "Dog Category"
+   date: "2023-01-01T00:00:00Z"
+   ---
+
+   Your blog post content in Markdown format...
+   ```
+
+2. Run the import script:
+   ```bash
+   npm run import-blog-posts
+   ```
+
+The script will:
+- Read all Markdown files from the posts directory
+- Check if they already exist in the database
+- Import new posts to Supabase
+- Automatically notify search engines via IndexNow
+
+### Lazy Loading Blog Posts
+
+The blog page implements lazy loading to improve performance:
+- Initially loads a limited number of posts
+- Loads more posts as the user scrolls down
+- Provides a smooth infinite scrolling experience
+
+## SEO Features
+
+### Dynamic Sitemap Generation
+
+PawPedia automatically generates a sitemap for search engines:
+
+1. The sitemap is dynamically generated using Next.js's built-in sitemap functionality
+2. It includes all static pages, breed pages, blog posts, and blog categories
+3. The sitemap is accessible at `/sitemap.xml`
+
+### IndexNow Integration
+
+PawPedia integrates with IndexNow to notify search engines about new content:
+
+1. When new blog posts are imported, IndexNow is automatically notified
+2. You can manually submit all URLs to IndexNow using:
+   ```bash
+   npm run submit-to-indexnow
+   ```
+
+3. The IndexNow API key is stored in the codebase and used for all submissions
+
 ## Development
 
 Run the development server:
@@ -68,6 +148,14 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+
+## Scripts
+
+- `npm run dev` - Start the development server
+- `npm run build` - Build the application for production
+- `npm run start` - Start the production server
+- `npm run import-blog-posts` - Import blog posts from Markdown files
+- `npm run submit-to-indexnow` - Submit all URLs to IndexNow
 
 ## Deployment
 

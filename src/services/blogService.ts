@@ -63,6 +63,28 @@ export async function getAllBlogPosts(limit: number = 10, page: number = 1): Pro
 }
 
 /**
+ * Get the total count of blog posts
+ * @returns Total number of blog posts
+ */
+export async function getBlogPostCount(): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('blog_posts')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) {
+      console.error('Error fetching blog post count:', error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error('Error fetching blog post count:', error);
+    return 0;
+  }
+}
+
+/**
  * Get a single blog post by slug
  * @param slug The slug of the blog post
  * @returns The blog post or null if not found
@@ -249,8 +271,7 @@ export async function addCommentToPost(comment: Omit<BlogComment, 'id' | 'is_app
  */
 export async function searchBlogPosts(query: string, limit: number = 10): Promise<BlogPost[]> {
   try {
-    // This is a simple search implementation
-    // For a more robust search, consider using Supabase's full-text search capabilities
+    // Use fresh data with dynamic rendering set at the page level
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
@@ -271,51 +292,32 @@ export async function searchBlogPosts(query: string, limit: number = 10): Promis
 }
 
 /**
- * Get the total count of blog posts
- * @param categorySlug Optional category slug to filter by
- * @returns The total number of blog posts
+ * Get related blog posts
+ * @param postId The ID of the current blog post
+ * @param category The category of the current blog post
+ * @param limit Number of related posts to return (default: 3)
+ * @returns Array of related blog posts
  */
-export async function getBlogPostCount(categorySlug?: string): Promise<number> {
+export async function getRelatedBlogPosts(postId: number, category: string, limit: number = 3): Promise<BlogPost[]> {
   try {
-    let query = supabase
+    // Use fresh data with dynamic rendering set at the page level
+    const { data, error } = await supabase
       .from('blog_posts')
-      .select('id', { count: 'exact' });
-    
-    if (categorySlug) {
-      // First, convert the slug back to a category name
-      const categories = await getAllBlogCategories();
-      
-      // Normalize the input slug for comparison
-      const normalizedSlug = categorySlug.toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-');
-      
-      // Find the category with a case-insensitive comparison
-      const category = categories.find(cat => 
-        cat.slug.toLowerCase() === normalizedSlug || 
-        cat.name.toLowerCase() === categorySlug.toLowerCase().replace(/-/g, ' ')
-      );
-      
-      if (category) {
-        query = query.eq('category', category.name);
-      } else {
-        console.error(`Category with slug "${categorySlug}" not found`);
-        return 0;
-      }
-    }
-    
-    const { count, error } = await query;
+      .select('*')
+      .eq('category', category)
+      .neq('id', postId)
+      .order('published_at', { ascending: false })
+      .limit(limit);
     
     if (error) {
-      console.error('Error counting blog posts:', error);
-      return 0;
+      console.error('Error fetching related blog posts:', error);
+      return [];
     }
     
-    return count || 0;
+    return data as BlogPost[];
   } catch (error) {
-    console.error('Error counting blog posts:', error);
-    return 0;
+    console.error('Error fetching related blog posts:', error);
+    return [];
   }
 }
 

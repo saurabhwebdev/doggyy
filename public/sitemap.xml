@@ -9,7 +9,7 @@
 <body>
   <h1>PawPedia Sitemap</h1>
   
-  <p>This is the sitemap for PawPedia. For the XML version, please visit <a href="https://www.pawpedia.xyz/sitemap.xml">sitemap.xml</a>.</p>
+  <p>This is a static version of the sitemap for PawPedia. For the complete and up-to-date XML version with all blog posts, please visit <a href="https://www.pawpedia.xyz/sitemap.xml">sitemap.xml</a> (generated dynamically by Next.js).</p>
   
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
