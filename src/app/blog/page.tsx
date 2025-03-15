@@ -8,6 +8,10 @@ import BlogPostCard from '@/components/blog/BlogPostCard';
 import FeaturedBlogPost from '@/components/blog/FeaturedBlogPost';
 import NewsletterSignup from '@/components/blog/NewsletterSignup';
 
+// Set dynamic rendering to ensure fresh data on each request
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 export const metadata: Metadata = {
   title: 'Dog Care Blog',
   description: 'Read expert advice on dog care, training, nutrition, health, and more. Our blog provides valuable information for dog owners and enthusiasts.',

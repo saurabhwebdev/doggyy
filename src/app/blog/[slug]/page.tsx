@@ -2,11 +2,15 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getBlogPostBySlug, getCommentsForPost, getAllBlogPosts } from '@/services/blogService';
+import { getBlogPostBySlug, getCommentsForPost } from '@/services/blogService';
 import { formatDate } from '@/utils/dateUtils';
 import { BlogPostJsonLd } from '@/components/JsonLd';
 import CommentSection from '@/components/blog/CommentSection';
 import ReactMarkdown from 'react-markdown';
+
+// Set dynamic rendering to ensure fresh data on each request
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface BlogPostPageProps {
   params: {
@@ -32,15 +36,6 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       canonical: `https://www.pawpedia.xyz/blog/${post.slug}`
     }
   };
-}
-
-// Generate static params for static generation
-export async function generateStaticParams() {
-  const posts = await getAllBlogPosts(100); // Get all posts (up to 100)
-  
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {

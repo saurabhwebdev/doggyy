@@ -43,6 +43,7 @@ export async function getAllBlogPosts(limit: number = 10, page: number = 1): Pro
   try {
     const offset = (page - 1) * limit;
     
+    // Use fresh data with dynamic rendering set at the page level
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
@@ -68,6 +69,7 @@ export async function getAllBlogPosts(limit: number = 10, page: number = 1): Pro
  */
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
+    // Use fresh data with dynamic rendering set at the page level
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
@@ -97,6 +99,7 @@ export async function getBlogPostsByCategory(category: string, limit: number = 1
   try {
     const offset = (page - 1) * limit;
     
+    // Use fresh data with dynamic rendering set at the page level
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
@@ -122,6 +125,7 @@ export async function getBlogPostsByCategory(category: string, limit: number = 1
  */
 export async function getAllBlogCategories(): Promise<BlogCategory[]> {
   try {
+    // Use fresh data with dynamic rendering set at the page level
     const { data, error } = await supabase
       .from('blog_categories')
       .select('*')
@@ -253,11 +257,12 @@ export async function getBlogPostCount(category?: string): Promise<number> {
 }
 
 /**
- * Get all blog posts without pagination (for sitemap generation)
+ * Get all blog posts for sitemap generation
  * @returns Array of all blog posts
  */
 export async function getAllBlogPostsForSitemap(): Promise<BlogPost[]> {
   try {
+    // Use fresh data with dynamic rendering set at the page level
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')

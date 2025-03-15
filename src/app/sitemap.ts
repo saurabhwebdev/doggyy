@@ -1,10 +1,14 @@
 import { MetadataRoute } from 'next';
 import { getAllBlogPostsForSitemap, getAllBlogCategories } from '@/services/blogService';
 
+// Set dynamic rendering to ensure fresh data on each request
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 // Get all breeds for sitemap
 async function getAllBreeds() {
   try {
-    const response = await fetch('https://dog.ceo/api/breeds/list/all');
+    const response = await fetch('https://dog.ceo/api/breeds/list/all', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error('Failed to fetch breeds');
     }

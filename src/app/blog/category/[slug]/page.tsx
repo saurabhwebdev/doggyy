@@ -6,6 +6,10 @@ import BlogCategoryList from '@/components/blog/BlogCategoryList';
 import BlogPostCard from '@/components/blog/BlogPostCard';
 import { WebsiteJsonLd } from '@/components/JsonLd';
 
+// Set dynamic rendering to ensure fresh data on each request
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
 interface CategoryPageProps {
   params: {
     slug: string;
@@ -31,15 +35,6 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       canonical: `https://www.pawpedia.xyz/blog/category/${category.slug}`
     }
   };
-}
-
-// Generate static params for static generation
-export async function generateStaticParams() {
-  const categories = await getAllBlogCategories();
-  
-  return categories.map((category) => ({
-    slug: category.slug,
-  }));
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {

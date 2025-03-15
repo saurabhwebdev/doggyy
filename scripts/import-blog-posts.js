@@ -27,24 +27,23 @@ const publishedArticlesPath = path.join(__dirname, 'published-articles.json');
 // Function to load the list of published articles
 async function loadPublishedArticles() {
   try {
-    if (fs.existsSync(publishedArticlesPath)) {
-      const data = fs.readFileSync(publishedArticlesPath, 'utf8');
-      return JSON.parse(data);
-    } else {
-      // If file doesn't exist, fetch from database and create it
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .select('slug');
-      
-      if (error) {
-        console.error('Error fetching published articles:', error);
-        return [];
-      }
-      
-      const publishedSlugs = data.map(post => post.slug);
-      fs.writeFileSync(publishedArticlesPath, JSON.stringify(publishedSlugs, null, 2));
-      return publishedSlugs;
+    // Always fetch from database to get the most current data
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('slug');
+    
+    if (error) {
+      console.error('Error fetching published articles:', error);
+      return [];
     }
+    
+    const publishedSlugs = data.map(post => post.slug);
+    
+    // Update the local cache file
+    fs.writeFileSync(publishedArticlesPath, JSON.stringify(publishedSlugs, null, 2));
+    console.log(`Loaded ${publishedSlugs.length} published article slugs`);
+    
+    return publishedSlugs;
   } catch (error) {
     console.error('Error loading published articles:', error);
     return [];
@@ -264,7 +263,6 @@ async function main() {
   try {
     // Load the list of published articles
     const publishedSlugs = await loadPublishedArticles();
-    console.log(`Loaded ${publishedSlugs.length} published article slugs`);
     
     // Read markdown files
     const posts = await readMarkdownFiles();
