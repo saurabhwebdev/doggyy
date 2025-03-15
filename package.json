@@ -12,7 +12,8 @@
     "apply-migrations": "node scripts/apply-migrations.js",
     "fix-ts-errors": "node scripts/fix-ts-errors.js",
     "prepare-for-vercel": "node scripts/prepare-for-vercel.js",
-    "submit-to-indexnow": "node scripts/submitAllToIndexNow.js"
+    "submit-to-indexnow": "node scripts/submitAllToIndexNow.js",
+    "import-blog-posts": "node scripts/import-blog-posts.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
