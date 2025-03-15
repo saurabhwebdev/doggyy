@@ -2,5 +2,6 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://www.pawpedia.xyz/sitemap.xml 
+# Sitemap locations
+Sitemap: https://www.pawpedia.xyz/sitemap.xml
+Sitemap: https://www.pawpedia.xyz/sitemap-index.xml 
