@@ -9,6 +9,7 @@ import PageTransition from "@/components/PageTransition";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { OrganizationJsonLd } from "@/components/SEO";
 import SupabaseInitializer from "@/components/SupabaseInitializer";
+import { Suspense } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -73,7 +74,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="light">
       <body className={`${inter.className} bg-white text-gray-900 min-h-screen flex flex-col`}>
-        <GoogleAnalytics />
+        <Suspense fallback={null}>
+          <GoogleAnalytics />
+        </Suspense>
         <OrganizationJsonLd 
           name="PawPedia"
           url="https://www.pawpedia.xyz"
@@ -84,7 +87,9 @@ export default function RootLayout({
             "https://instagram.com/pawpedia"
           ]}
         />
-        <LoadingIndicator />
+        <Suspense fallback={null}>
+          <LoadingIndicator />
+        </Suspense>
         <Header />
         <main className="flex-grow">
           <PageTransition>
