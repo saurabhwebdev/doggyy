@@ -71,6 +71,22 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
 
 ## Deployment
 
+### Vercel Deployment
+
+The easiest way to deploy PawPedia is using Vercel:
+
+1. Push your code to a GitHub repository
+2. Go to [Vercel](https://vercel.com) and sign up or log in
+3. Click "New Project" and import your GitHub repository
+4. Configure the project:
+   - Set the Framework Preset to "Next.js"
+   - Add the environment variables from your `.env.local` file
+5. Click "Deploy"
+
+Vercel will automatically build and deploy your application. Each time you push changes to your repository, Vercel will automatically redeploy your application.
+
+### Manual Deployment
+
 Build the application for production:
 
 ```bash

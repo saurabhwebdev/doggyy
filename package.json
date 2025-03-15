@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "cleanup-cache": "ts-node src/scripts/cleanup-cache.ts",
-    "apply-migrations": "node scripts/apply-migrations.js"
+    "apply-migrations": "node scripts/apply-migrations.js",
+    "fix-ts-errors": "node scripts/fix-ts-errors.js",
+    "prepare-for-vercel": "node scripts/prepare-for-vercel.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
