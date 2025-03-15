@@ -11,12 +11,14 @@
     "cleanup-cache": "ts-node src/scripts/cleanup-cache.ts",
     "apply-migrations": "node scripts/apply-migrations.js",
     "fix-ts-errors": "node scripts/fix-ts-errors.js",
-    "prepare-for-vercel": "node scripts/prepare-for-vercel.js"
+    "prepare-for-vercel": "node scripts/prepare-for-vercel.js",
+    "submit-to-indexnow": "node scripts/submitAllToIndexNow.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
     "dotenv": "^16.4.7",
     "next": "15.2.2",
+    "node-fetch": "^2.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
