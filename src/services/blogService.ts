@@ -90,20 +90,41 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
 
 /**
  * Get blog posts by category
- * @param category The category slug
+ * @param categorySlug The category slug
  * @param limit Number of posts to return (default: 10)
  * @param page Page number for pagination (default: 1)
  * @returns Array of blog posts
  */
-export async function getBlogPostsByCategory(category: string, limit: number = 10, page: number = 1): Promise<BlogPost[]> {
+export async function getBlogPostsByCategory(categorySlug: string, limit: number = 10, page: number = 1): Promise<BlogPost[]> {
   try {
     const offset = (page - 1) * limit;
+    
+    // First, convert the slug back to a category name
+    // Get all categories
+    const categories = await getAllBlogCategories();
+    
+    // Normalize the input slug for comparison
+    const normalizedSlug = categorySlug.toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+    
+    // Find the category with a case-insensitive comparison
+    const category = categories.find(cat => 
+      cat.slug.toLowerCase() === normalizedSlug || 
+      cat.name.toLowerCase() === categorySlug.toLowerCase().replace(/-/g, ' ')
+    );
+    
+    if (!category) {
+      console.error(`Category with slug "${categorySlug}" not found`);
+      return [];
+    }
     
     // Use fresh data with dynamic rendering set at the page level
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
-      .eq('category', category)
+      .eq('category', category.name)
       .order('published_at', { ascending: false })
       .range(offset, offset + limit - 1);
     
@@ -125,18 +146,40 @@ export async function getBlogPostsByCategory(category: string, limit: number = 1
  */
 export async function getAllBlogCategories(): Promise<BlogCategory[]> {
   try {
-    // Use fresh data with dynamic rendering set at the page level
+    // Fetch unique categories from blog_posts table instead of blog_categories
     const { data, error } = await supabase
-      .from('blog_categories')
-      .select('*')
-      .order('name', { ascending: true });
+      .from('blog_posts')
+      .select('category')
+      .order('category', { ascending: true });
     
     if (error) {
       console.error('Error fetching blog categories:', error);
       return [];
     }
     
-    return data as BlogCategory[];
+    // Transform the data to match the BlogCategory interface
+    // Create unique categories based on the category field
+    const uniqueCategories = new Map();
+    
+    data.forEach(post => {
+      if (post.category && !uniqueCategories.has(post.category)) {
+        // Create a slug from the category name - handle spaces and special characters
+        const slug = post.category.toLowerCase()
+          .replace(/[^\w\s-]/g, '') // Remove special characters
+          .replace(/\s+/g, '-')     // Replace spaces with hyphens
+          .replace(/-+/g, '-');     // Replace multiple hyphens with single hyphen
+        
+        uniqueCategories.set(post.category, {
+          id: uniqueCategories.size + 1, // Generate a sequential ID
+          name: post.category,
+          slug: slug,
+          description: `Posts about ${post.category}`,
+          created_at: new Date().toISOString()
+        });
+      }
+    });
+    
+    return Array.from(uniqueCategories.values()) as BlogCategory[];
   } catch (error) {
     console.error('Error fetching blog categories:', error);
     return [];
@@ -229,17 +272,37 @@ export async function searchBlogPosts(query: string, limit: number = 10): Promis
 
 /**
  * Get the total count of blog posts
- * @param category Optional category to filter by
+ * @param categorySlug Optional category slug to filter by
  * @returns The total number of blog posts
  */
-export async function getBlogPostCount(category?: string): Promise<number> {
+export async function getBlogPostCount(categorySlug?: string): Promise<number> {
   try {
     let query = supabase
       .from('blog_posts')
       .select('id', { count: 'exact' });
     
-    if (category) {
-      query = query.eq('category', category);
+    if (categorySlug) {
+      // First, convert the slug back to a category name
+      const categories = await getAllBlogCategories();
+      
+      // Normalize the input slug for comparison
+      const normalizedSlug = categorySlug.toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+      
+      // Find the category with a case-insensitive comparison
+      const category = categories.find(cat => 
+        cat.slug.toLowerCase() === normalizedSlug || 
+        cat.name.toLowerCase() === categorySlug.toLowerCase().replace(/-/g, ' ')
+      );
+      
+      if (category) {
+        query = query.eq('category', category.name);
+      } else {
+        console.error(`Category with slug "${categorySlug}" not found`);
+        return 0;
+      }
     }
     
     const { count, error } = await query;

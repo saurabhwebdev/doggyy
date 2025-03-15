@@ -7,18 +7,21 @@ export async function verifyBreedCacheTable(): Promise<boolean> {
   try {
     // Try to query the breed_cache table directly
     // If it exists, this will succeed; if not, it will fail with an error
-    const { error } = await supabase
-      .from('breed_cache')
-      .select('count(*)')
-      .limit(1)
-      .single();
-    
-    if (!error) {
-      console.log('breed_cache table exists');
-      return true;
+    try {
+      const { error } = await supabase
+        .from('breed_cache')
+        .select('count(*)')
+        .limit(1);
+      
+      if (!error) {
+        console.log('breed_cache table exists');
+        return true;
+      }
+      
+      console.log('The breed_cache table does not exist or cannot be accessed:', error.message);
+    } catch (queryError) {
+      console.log('Error querying breed_cache table:', queryError);
     }
-    
-    console.log('The breed_cache table does not exist or cannot be accessed:', error.message);
     
     // Try to create the table with a direct SQL query via stored procedure
     try {
@@ -36,7 +39,8 @@ export async function verifyBreedCacheTable(): Promise<boolean> {
     }
     
     // If we get here, we couldn't create the table
-    console.error('Failed to create breed_cache table. Caching will not work.');
+    // Instead of failing, we'll just log a warning and continue
+    console.warn('Could not verify or create breed_cache table. Some caching features may not work.');
     return false;
   } catch (error) {
     console.error('Error verifying breed_cache table:', error);
@@ -52,7 +56,7 @@ export async function ensureBreedCacheTable(): Promise<void> {
     const tableExists = await verifyBreedCacheTable();
     
     if (!tableExists) {
-      console.error('Failed to verify or create the breed_cache table. Caching will not work.');
+      console.warn('Failed to verify or create the breed_cache table. Some caching features may not work.');
     }
   } catch (error) {
     console.error('Error ensuring breed_cache table:', error);

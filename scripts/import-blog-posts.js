@@ -2,6 +2,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 require('dotenv').config({ path: '.env.local' });
 
 // Debug environment variables
@@ -27,7 +28,7 @@ const publishedArticlesPath = path.join(__dirname, 'published-articles.json');
 // Function to load the list of published articles
 async function loadPublishedArticles() {
   try {
-    // Always fetch from database to get the most current data
+    // Always fetch the current list directly from Supabase
     const { data, error } = await supabase
       .from('blog_posts')
       .select('slug');
@@ -38,10 +39,10 @@ async function loadPublishedArticles() {
     }
     
     const publishedSlugs = data.map(post => post.slug);
+    console.log(`Loaded ${publishedSlugs.length} published article slugs from Supabase`);
     
-    // Update the local cache file
+    // Update the local cache file for reference
     fs.writeFileSync(publishedArticlesPath, JSON.stringify(publishedSlugs, null, 2));
-    console.log(`Loaded ${publishedSlugs.length} published article slugs`);
     
     return publishedSlugs;
   } catch (error) {
@@ -65,6 +66,79 @@ function updatePublishedArticles(slug) {
     }
   } catch (error) {
     console.error('Error updating published articles list:', error);
+  }
+}
+
+// Function to ensure category exists in the categories table
+async function ensureCategoryExists(category) {
+  try {
+    // Check if category already exists in the blog_posts table
+    const { data: existingPosts, error: queryError } = await supabase
+      .from('blog_posts')
+      .select('category')
+      .eq('category', category);
+    
+    if (queryError) {
+      console.error(`Error checking for existing category ${category} in blog_posts:`, queryError);
+      return null;
+    }
+    
+    // If category exists in any blog post, we don't need to do anything else
+    if (existingPosts && existingPosts.length > 0) {
+      console.log(`Category already exists in blog_posts: ${category}`);
+      return category;
+    }
+    
+    // If we're adding a new category, just log it
+    console.log(`Adding new category to blog_posts: ${category}`);
+    return category;
+  } catch (error) {
+    console.error(`Error processing category ${category}:`, error);
+    return category; // Return the category anyway to continue with the import
+  }
+}
+
+// Function to get a dog image from the Dog CEO API
+async function getDogImage(breed) {
+  try {
+    // Convert category or breed name to a format that might match the Dog CEO API
+    // Remove "Dog " prefix if present and convert to lowercase
+    let searchBreed = breed.replace(/dog\s+/i, '').toLowerCase();
+    
+    // Handle some common categories that might not directly map to Dog CEO breeds
+    const breedMappings = {
+      'dog legislation': 'husky',
+      'dog breeds': 'retriever',
+      'dog ownership': 'labrador',
+      'dog activities': 'boxer',
+      'dog health & safety': 'collie',
+      'dog nutrition': 'poodle',
+      'seasonal care': 'samoyed',
+      'dog grooming': 'maltese',
+      'dog safety': 'beagle'
+    };
+    
+    if (breedMappings[searchBreed]) {
+      searchBreed = breedMappings[searchBreed];
+    }
+    
+    // Try to get a random image for the specific breed
+    try {
+      const response = await axios.get(`https://dog.ceo/api/breed/${searchBreed}/images/random`);
+      if (response.data.status === 'success') {
+        return response.data.message;
+      }
+    } catch (error) {
+      console.log(`No specific breed found for ${searchBreed}, using random dog image instead`);
+    }
+    
+    // Fallback to a random dog image
+    const randomResponse = await axios.get('https://dog.ceo/api/breeds/image/random');
+    return randomResponse.data.message;
+  } catch (error) {
+    console.error('Error fetching dog image:', error);
+    // Return a default image URL if all else fails
+    return 'https://images.dog.ceo/breeds/spaniel-blenheim/n02086646_2641.jpg';
   }
 }
 
@@ -189,7 +263,7 @@ async function importPostsToSupabase(posts, publishedSlugs) {
         continue;
       }
       
-      // Check if post with this slug already exists in database
+      // Double-check directly with the database to ensure we're not duplicating
       const { data: existingPost, error: queryError } = await supabase
         .from('blog_posts')
         .select('id')
@@ -202,54 +276,44 @@ async function importPostsToSupabase(posts, publishedSlugs) {
       }
       
       if (existingPost) {
-        // Update existing post
-        console.log(`Updating post: ${post.title} (${post.slug})`);
-        const { error } = await supabase
-          .from('blog_posts')
-          .update({
-            title: post.title,
-            content: post.content,
-            excerpt: post.excerpt,
-            featured_image: post.featured_image,
-            author: post.author,
-            category: post.category,
-            published_at: post.published_at,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingPost.id);
-        
-        if (error) {
-          console.error(`Error updating post ${post.slug}:`, error);
-        } else {
-          console.log(`✅ Post updated: ${post.title}`);
-          // Add to published list
+        console.log(`Post already exists in database: ${post.title} (${post.slug})`);
+        // Add to our local tracking to avoid future checks
+        if (!publishedSlugs.includes(post.slug)) {
           updatePublishedArticles(post.slug);
         }
+        continue;
+      }
+      
+      // Ensure category exists by checking blog_posts table
+      await ensureCategoryExists(post.category);
+      
+      // Get a dog image from the Dog CEO API
+      const dogImage = await getDogImage(post.category);
+      console.log(`Using dog image: ${dogImage} for post: ${post.title}`);
+      
+      // Insert new post
+      console.log(`Creating new post: ${post.title} (${post.slug})`);
+      const { error } = await supabase
+        .from('blog_posts')
+        .insert([{
+          title: post.title,
+          slug: post.slug,
+          content: post.content,
+          excerpt: post.excerpt,
+          featured_image: dogImage, // Use the Dog CEO API image
+          author: post.author,
+          category: post.category,
+          published_at: post.published_at,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }]);
+      
+      if (error) {
+        console.error(`Error creating post ${post.slug}:`, error);
       } else {
-        // Insert new post
-        console.log(`Creating new post: ${post.title} (${post.slug})`);
-        const { error } = await supabase
-          .from('blog_posts')
-          .insert([{
-            title: post.title,
-            slug: post.slug,
-            content: post.content,
-            excerpt: post.excerpt,
-            featured_image: post.featured_image,
-            author: post.author,
-            category: post.category,
-            published_at: post.published_at,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
-        
-        if (error) {
-          console.error(`Error creating post ${post.slug}:`, error);
-        } else {
-          console.log(`✅ Post created: ${post.title}`);
-          // Add to published list
-          updatePublishedArticles(post.slug);
-        }
+        console.log(`✅ Post created: ${post.title}`);
+        // Add to published list
+        updatePublishedArticles(post.slug);
       }
     } catch (error) {
       console.error(`Error processing post ${post.slug}:`, error);
@@ -261,11 +325,15 @@ async function importPostsToSupabase(posts, publishedSlugs) {
 // Main function
 async function main() {
   try {
-    // Load the list of published articles
+    // Load the list of published articles directly from Supabase
     const publishedSlugs = await loadPublishedArticles();
     
     // Read markdown files
     const posts = await readMarkdownFiles();
+    
+    // Count how many new posts we'll be importing
+    const newPosts = posts.filter(post => !publishedSlugs.includes(post.slug));
+    console.log(`Found ${newPosts.length} new posts to import out of ${posts.length} total posts`);
     
     // Import posts to Supabase
     await importPostsToSupabase(posts, publishedSlugs);

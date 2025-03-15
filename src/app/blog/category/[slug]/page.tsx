@@ -18,8 +18,10 @@ interface CategoryPageProps {
 
 // Generate metadata for the page
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  // Ensure params.slug is properly handled
+  const slug = params.slug;
   const categories = await getAllBlogCategories();
-  const category = categories.find(cat => cat.slug === params.slug);
+  const category = categories.find(cat => cat.slug === slug);
   
   if (!category) {
     return {
@@ -38,14 +40,16 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
+  // Ensure params.slug is properly handled
+  const slug = params.slug;
   const categories = await getAllBlogCategories();
-  const category = categories.find(cat => cat.slug === params.slug);
+  const category = categories.find(cat => cat.slug === slug);
   
   if (!category) {
     notFound();
   }
   
-  const posts = await getBlogPostsByCategory(category.name);
+  const posts = await getBlogPostsByCategory(slug);
   
   return (
     <div className="container mx-auto px-4 py-12">
