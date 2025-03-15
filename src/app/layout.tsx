@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   authors: [{ name: "PawPedia Team" }],
   creator: "PawPedia",
   publisher: "PawPedia",
+  verification: {
+    google: "wRtZZyRPabEglKufGIFct1_wu5RwhrSgQAPk56tVX08",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
